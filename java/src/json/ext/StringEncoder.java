@@ -55,6 +55,7 @@ final class StringEncoder extends ByteListTranscoder {
     private void handleChar(int c) {
         switch (c) {
         case '"':
+        case '/':
         case '\\':
             escapeChar((char)c);
             break;
