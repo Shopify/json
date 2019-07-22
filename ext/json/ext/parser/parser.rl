@@ -95,7 +95,9 @@ static ID i_json_creatable_p, i_json_create, i_create_id, i_create_additions,
           i_chr, i_max_nesting, i_allow_nan, i_symbolize_names,
           i_object_class, i_array_class, i_decimal_class, i_key_p,
           i_deep_const_get, i_match, i_match_string, i_aset, i_aref,
-          i_leftshift, i_new, i_BigDecimal;
+          i_leftshift, i_new, i_BigDecimal, i_uminus;
+
+static int JSON_deduplicate_names = 0;
 
 %%{
     machine JSON_common;
@@ -569,8 +571,10 @@ static char *JSON_parse_string(JSON_Parser *json, char *p, char *pe, VALUE *resu
           }
     }
 
-    if (json->symbolize_names && json->parsing_name) {
+    if (json->parsing_name && json->symbolize_names) {
       *result = rb_str_intern(*result);
+    } else if (json->parsing_name && JSON_deduplicate_names) {
+      *result = rb_funcall(*result, i_uminus, 0);
     } else if (RB_TYPE_P(*result, T_STRING)) {
       rb_str_resize(*result, RSTRING_LEN(*result));
     }
@@ -878,6 +882,9 @@ void Init_parser(void)
     i_leftshift = rb_intern("<<");
     i_new = rb_intern("new");
     i_BigDecimal = rb_intern("BigDecimal");
+    i_uminus = rb_intern("-@");
+
+    JSON_deduplicate_names = RTEST(rb_funcall(rb_cString, rb_intern("method_defined?"), 1, rb_str_new_cstr("-@")));
 }
 
 /*

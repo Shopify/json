@@ -275,7 +275,7 @@ module JSON
             end
             skip(IGNORE)
             unless UNPARSED.equal?(value = parse_value)
-              result[@symbolize_names ? string.to_sym : string] = value
+              result[@symbolize_names ? string.to_sym : deduplicate(string)] = value
               delim = false
               skip(IGNORE)
               if scan(COLLECTION_DELIMITER)
@@ -305,6 +305,16 @@ module JSON
           end
         end
         result
+      end
+
+      if String.method_defined?(:-@)
+        def deduplicate(string)
+          -(string.untaint)
+        end
+      else
+        def deduplicate(string)
+          string.untaint.freeze
+        end
       end
     end
   end

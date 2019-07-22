@@ -462,6 +462,14 @@ EOT
     )
   end
 
+  if String.method_defined?(:-@) && (-("a" * 20)).equal?((-("a" * 20)))
+    def test_object_key_deduplication
+      hashes = JSON('[{"unique_identifier":"bar"}, {"unique_identifier":"baz"}]'.taint)
+
+      assert_same hashes[0].keys.first, hashes[1].keys.first
+    end
+  end
+
   private
 
   def assert_equal_float(expected, actual, delta = 1e-2)
