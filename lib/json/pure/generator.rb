@@ -37,20 +37,26 @@ module JSON
     '\\'  =>  '\\\\',
   } # :nodoc:
 
+  ESCAPE_SLASH_MAP = MAP.merge(
+    '/'  =>  '\\/',
+  )
+
   # Convert a UTF8 encoded Ruby string _string_ to a JSON string, encoded with
   # UTF16 big endian characters as \u????, and return it.
-  def utf8_to_json(string) # :nodoc:
+  def utf8_to_json(string, escape_slash = true) # :nodoc:
     string = string.dup
     string.force_encoding(::Encoding::ASCII_8BIT)
-    string.gsub!(/["\\\x0-\x1f]/) { MAP[$&] }
+    map = escape_slash ? ESCAPE_SLASH_MAP : MAP
+    string.gsub!(/[\/"\\\x0-\x1f]/) { map[$&] || $& }
     string.force_encoding(::Encoding::UTF_8)
     string
   end
 
-  def utf8_to_json_ascii(string) # :nodoc:
+  def utf8_to_json_ascii(string, escape_slash = true) # :nodoc:
     string = string.dup
     string.force_encoding(::Encoding::ASCII_8BIT)
-    string.gsub!(/["\\\x0-\x1f]/n) { MAP[$&] }
+    map = escape_slash ? ESCAPE_SLASH_MAP : MAP
+    string.gsub!(/[\/"\\\x0-\x1f]/n) { map[$&] || $& }
     string.gsub!(/(
       (?:
        [\xc2-\xdf][\x80-\xbf]    |
@@ -123,6 +129,7 @@ module JSON
           @array_nl              = ''
           @allow_nan             = false
           @ascii_only            = false
+          @escape_slash          = false
           @buffer_initial_length = 1024
           configure opts
         end
@@ -147,6 +154,10 @@ module JSON
         # This integer returns the maximum level of data structure nesting in
         # the generated JSON, max_nesting = 0 if no maximum is checked.
         attr_accessor :max_nesting
+
+        # If this attribute is set to true, forward slashes will be escaped in
+        # all json strings.
+        attr_accessor :escape_slash
 
         # :stopdoc:
         attr_reader :buffer_initial_length
@@ -187,6 +198,11 @@ module JSON
           @ascii_only
         end
 
+        # Returns true, if forward slashes are escaped. Otherwise returns false.
+        def escape_slash?
+          @escape_slash
+        end
+
         # Configure this State instance with the Hash _opts_, and return
         # itself.
         def configure(opts)
@@ -209,6 +225,7 @@ module JSON
           @ascii_only            = opts[:ascii_only] if opts.key?(:ascii_only)
           @depth                 = opts[:depth] || 0
           @buffer_initial_length ||= opts[:buffer_initial_length]
+          @escape_slash          = !!opts[:escape_slash]
 
           if !opts.key?(:max_nesting) # defaults to 100
             @max_nesting = 100
@@ -399,9 +416,9 @@ module JSON
               string = encode(::Encoding::UTF_8)
             end
             if state.ascii_only?
-              '"' << JSON.utf8_to_json_ascii(string) << '"'
+              '"' << JSON.utf8_to_json_ascii(string, state.escape_slash) << '"'
             else
-              '"' << JSON.utf8_to_json(string) << '"'
+              '"' << JSON.utf8_to_json(string, state.escape_slash) << '"'
             end
           end
 
