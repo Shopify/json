@@ -174,6 +174,7 @@ EOT
       :ascii_only            => false,
       :buffer_initial_length => 1024,
       :depth                 => 0,
+      :escape_slash          => false,
       :indent                => "  ",
       :max_nesting           => 100,
       :object_nl             => "\n",
@@ -190,6 +191,7 @@ EOT
       :ascii_only            => false,
       :buffer_initial_length => 1024,
       :depth                 => 0,
+      :escape_slash          => false,
       :indent                => "",
       :max_nesting           => 100,
       :object_nl             => "",
@@ -206,6 +208,7 @@ EOT
       :ascii_only            => false,
       :buffer_initial_length => 1024,
       :depth                 => 0,
+      :escape_slash          => false,
       :indent                => "",
       :max_nesting           => 0,
       :object_nl             => "",
@@ -401,6 +404,11 @@ EOT
     data = ["'"]
     json = '["\\\'"]'
     assert_equal '["\'"]', generate(data)
+
+    data = [ '/' ]
+    json = '["\/"]'
+    assert_equal json, JSON.generate(data, :escape_slash => true)
+    assert_equal data, JSON.parse(json)
   end
 
   def test_string_subclass
